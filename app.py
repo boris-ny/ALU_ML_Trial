@@ -4,21 +4,10 @@ from pydantic import BaseModel
 import pickle
 import numpy as np
 import uvicorn
-import gdown
 
-# Google Drive file ID
-file_id = "1UvlAfE0nc_MWIDMt6NThw-50-vahDnO0"
-output = "best_hydroponic_model.pkl"
-
-# Download model if it doesn't exist
-try:
-    with open(output, "rb") as f:
-        model = pickle.load(f)
-except FileNotFoundError:
-    print("Downloading model from Google Drive...")
-    gdown.download(f"https://drive.google.com/uc?id={file_id}", output, quiet=False)
-    with open(output, "rb") as f:
-        model = pickle.load(f)
+# Load the best-performing model
+with open("best_hydroponic_model.pkl", "rb") as file:
+    model = pickle.load(file)
 
 # Initialize FastAPI application
 app = FastAPI(title="Hydroponic pH Prediction API")
