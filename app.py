@@ -1,16 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import pickle
 import numpy as np
 import uvicorn
+import os
 
 # Load the best-performing model
 with open("best_hydroponic_model.pkl", "rb") as file:
     model = pickle.load(file)
 
+
 # Initialize FastAPI application
-app = FastAPI(title="Hydroponic pH Prediction API")
+app = FastAPI(
+    title="Hydroponic pH Prediction API",
+    description="This API predicts the optimal pH level for hydroponic farming based on key soil and environmental factors.",
+    version="1.0.0",
+    docs_url="/docs",  # Swagger UI Path
+    redoc_url="/redoc"  # Alternative API documentation
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,15 +27,16 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods including OPTIONS
     allow_headers=["*"],
 )
-# Define input data model
+
+# Define input data model with constraints
 class HydroponicInput(BaseModel):
-    soil_ec: float
-    nitrogen: float
-    phosphorus: float
-    potassium: float
-    moisture: float
-    temperature: float
-    crop: int  # Encoded crop type
+    soil_ec: float = Field(..., ge=0.0, le=3.0, description="Electrical Conductivity (dS/m), must be between 0 and 3")
+    nitrogen: float = Field(..., ge=0.0, le=120.0, description="Nitrogen content (ppm), must be between 0 and 120")
+    phosphorus: float = Field(..., ge=0.0, le=80.0, description="Phosphorus content (ppm), must be between 0 and 80")
+    potassium: float = Field(..., ge=0.0, le=300.0, description="Potassium content (ppm), must be between 0 and 300")
+    moisture: float = Field(..., ge=0.0, le=80.0, description="Moisture percentage, must be between 0 and 80")
+    temperature: float = Field(..., ge=0.0, le=30.0, description="Temperature (°C), must be between 0 and 30")
+    crop: int = Field(..., ge=0, le=12, description="Encoded crop type (0-12)")
 
 # Handle CORS preflight requests explicitly
 @app.options("/predict")
@@ -45,6 +54,6 @@ async def predict(data: HydroponicInput):
     return {"Predicted pH": prediction}
 
 # Run API (for local development)
-if __name__ == "__main__":
+if __name__ == "__main__":    
     uvicorn.run(app, host="127.0.0.1", port=8000)
 

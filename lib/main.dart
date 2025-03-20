@@ -1,115 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
-
-// void main() {
-//   runApp(HydroponicApp());
-// }
-
-// class HydroponicApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'Hydroponic pH Predictor',
-//       theme: ThemeData(primarySwatch: Colors.green),
-//       home: PredictionScreen(),
-//     );
-//   }
-// }
-
-// class PredictionScreen extends StatefulWidget {
-//   @override
-//   _PredictionScreenState createState() => _PredictionScreenState();
-// }
-
-// class _PredictionScreenState extends State<PredictionScreen> {
-//   final TextEditingController soilEcController = TextEditingController();
-//   final TextEditingController nitrogenController = TextEditingController();
-//   final TextEditingController phosphorusController = TextEditingController();
-//   final TextEditingController potassiumController = TextEditingController();
-//   final TextEditingController moistureController = TextEditingController();
-//   final TextEditingController temperatureController = TextEditingController();
-//   final TextEditingController cropController = TextEditingController();
-
-//   String predictionResult = "";
-//   String suggestion = "";
-
-//   Future<void> predictpH() async {
-//     final url = Uri.parse("http://127.0.0.1:8000/predict");
-//     final response = await http.post(
-//       url,
-//       headers: {"Content-Type": "application/json"},
-//       body: jsonEncode({
-//         "soil_ec": double.tryParse(soilEcController.text) ?? 0.0,
-//         "nitrogen": double.tryParse(nitrogenController.text) ?? 0.0,
-//         "phosphorus": double.tryParse(phosphorusController.text) ?? 0.0,
-//         "potassium": double.tryParse(potassiumController.text) ?? 0.0,
-//         "moisture": double.tryParse(moistureController.text) ?? 0.0,
-//         "temperature": double.tryParse(temperatureController.text) ?? 0.0,
-//         "crop": int.tryParse(cropController.text) ?? 0,
-//       }),
-//     );
-
-//     if (response.statusCode == 200) {
-//       double predictedPH = jsonDecode(response.body)["Predicted pH"];
-//       setState(() {
-//         predictionResult = "Predicted pH: " + predictedPH.toStringAsFixed(2);
-        
-//         // Provide suggestions based on pH range
-//         if (predictedPH < 5.5) {
-//           suggestion = "pH is too low. Consider adding lime (calcium carbonate) or increasing alkalinity using potassium bicarbonate.";
-//         } else if (predictedPH > 7.0) {
-//           suggestion = "pH is too high. Consider adding acidic nutrients like phosphoric acid or sulfur to lower the pH.";
-//         } else {
-//           suggestion = "pH is optimal for most crops. Maintain current nutrient balance.";
-//         }
-//       });
-//     } else {
-//       setState(() {
-//         predictionResult = "Error: Unable to predict pH";
-//         suggestion = "";
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Hydroponic pH Predictor")),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           children: [
-//             TextField(controller: soilEcController, decoration: InputDecoration(labelText: "Soil EC (dS/m)")),
-//             TextField(controller: nitrogenController, decoration: InputDecoration(labelText: "Nitrogen (ppm)")),
-//             TextField(controller: phosphorusController, decoration: InputDecoration(labelText: "Phosphorus (ppm)")),
-//             TextField(controller: potassiumController, decoration: InputDecoration(labelText: "Potassium (ppm)")),
-//             TextField(controller: moistureController, decoration: InputDecoration(labelText: "Moisture (%)")),
-//             TextField(controller: temperatureController, decoration: InputDecoration(labelText: "Temperature (°C)")),
-//             TextField(controller: cropController, decoration: InputDecoration(labelText: "Crop (Encoded)")),
-//             SizedBox(height: 20),
-//             ElevatedButton(
-//               onPressed: predictpH,
-//               child: Text("Predict"),
-//             ),
-//             SizedBox(height: 20),
-//             Text(
-//               predictionResult,
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 10),
-//             Text(
-//               suggestion,
-//               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey),
-//               textAlign: TextAlign.center,
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -219,6 +107,8 @@ class PredictionScreen extends StatefulWidget {
 }
 
 class _PredictionScreenState extends State<PredictionScreen> {
+  final _formKey = GlobalKey<FormState>(); // Form key for validation
+
   final TextEditingController soilEcController = TextEditingController();
   final TextEditingController nitrogenController = TextEditingController();
   final TextEditingController phosphorusController = TextEditingController();
@@ -236,20 +126,23 @@ class _PredictionScreenState extends State<PredictionScreen> {
     'Squash': 10, 'Tomato': 11, 'Watermelon': 12
   };
 
-
+  // API call function
   Future<void> predictpH() async {
-    final url = Uri.parse("http://10.0.2.2:8000/predict");
+    if (!_formKey.currentState!.validate()) {
+      return; // Stop if validation fails
+    }
 
+    final url = Uri.parse("http://10.0.2.2:8000/predict");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "soil_ec": double.tryParse(soilEcController.text) ?? 0.0,
-        "nitrogen": double.tryParse(nitrogenController.text) ?? 0.0,
-        "phosphorus": double.tryParse(phosphorusController.text) ?? 0.0,
-        "potassium": double.tryParse(potassiumController.text) ?? 0.0,
-        "moisture": double.tryParse(moistureController.text) ?? 0.0,
-        "temperature": double.tryParse(temperatureController.text) ?? 0.0,
+        "soil_ec": double.parse(soilEcController.text),
+        "nitrogen": double.parse(nitrogenController.text),
+        "phosphorus": double.parse(phosphorusController.text),
+        "potassium": double.parse(potassiumController.text),
+        "moisture": double.parse(moistureController.text),
+        "temperature": double.parse(temperatureController.text),
         "crop": selectedCrop ?? 0,
       }),
     );
@@ -258,14 +151,12 @@ class _PredictionScreenState extends State<PredictionScreen> {
       double predictedPH = jsonDecode(response.body)["Predicted pH"];
       setState(() {
         predictionResult = "Predicted pH: " + predictedPH.toStringAsFixed(2);
-        
-        // Provide suggestions based on pH range
         if (predictedPH < 5.5) {
-          suggestion = "pH is too low. Consider adding lime (calcium carbonate) or increasing alkalinity using potassium bicarbonate.";
+          suggestion = "pH is too low. Consider adding lime (calcium carbonate) or increasing alkalinity.";
         } else if (predictedPH > 7.0) {
-          suggestion = "pH is too high. Consider adding acidic nutrients like phosphoric acid or sulfur to lower the pH.";
+          suggestion = "pH is too high. Consider adding acidic nutrients like phosphoric acid.";
         } else {
-          suggestion = "pH is optimal for your crops. Maintain current nutrient balance.";
+          suggestion = "pH is optimal for your crops.";
         }
       });
     } else {
@@ -276,13 +167,21 @@ class _PredictionScreenState extends State<PredictionScreen> {
     }
   }
 
+  // Validation function
+  String? validateInput(String? value) {
+    if (value == null || value.isEmpty) return "This field is required";
+    final number = double.tryParse(value);
+    if (number == null) return "Enter a valid number";
+    return null; // Valid input
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           Container(
-            height: 100, // Color bar at the top
+            height: 100, // Green color bar
             width: double.infinity,
             color: Colors.green,
             child: SafeArea(
@@ -293,10 +192,7 @@ class _PredictionScreenState extends State<PredictionScreen> {
                     onPressed: () => Navigator.pushReplacementNamed(context, '/welcome'),
                   ),
                   SizedBox(width: 10),
-                  Text(
-                    "Back to Home",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Back to Home", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -304,73 +200,107 @@ class _PredictionScreenState extends State<PredictionScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "📊 Please enter the required parameters to predict the pH level in your hydroponic system.",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 30),
-                  TextField(controller: soilEcController, decoration: InputDecoration(labelText: "Soil EC (dS/m)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  TextField(controller: nitrogenController, decoration: InputDecoration(labelText: "Nitrogen (ppm)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  TextField(controller: phosphorusController, decoration: InputDecoration(labelText: "Phosphorus (ppm)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  TextField(controller: potassiumController, decoration: InputDecoration(labelText: "Potassium (ppm)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  TextField(controller: moistureController, decoration: InputDecoration(labelText: "Moisture (%)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  TextField(controller: temperatureController, decoration: InputDecoration(labelText: "Temperature (°C)", border: OutlineInputBorder())),
-                  SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    value: selectedCrop,
-                    onChanged: (newValue) {
-                      setState(() {
-                        selectedCrop = newValue;
-                      });
-                    },
-                    items: cropEncoding.entries.map((entry) {
-                      return DropdownMenuItem<int>(
-                        value: entry.value,
-                        child: Text("${entry.key}"),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      labelText: "Select Crop",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                        textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: predictpH,
-                      child: Text("Predict"),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      predictionResult,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      suggestion,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey),
+              child: Form(
+                key: _formKey, // Assign form key
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "📊 Enter the required parameters to predict the pH level in your hydroponic system.",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
                       textAlign: TextAlign.center,
                     ),
-                  ),
-                ],
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: soilEcController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Soil EC (dS/m)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: nitrogenController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Nitrogen (ppm)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: phosphorusController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Phosphorus (ppm)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: potassiumController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Potassium (ppm)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: moistureController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Moisture (%)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: temperatureController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: "Temperature (°C)", border: OutlineInputBorder()),
+                      validator: validateInput,
+                    ),
+                    SizedBox(height: 10),
+                    DropdownButtonFormField<int>(
+                      value: selectedCrop,
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedCrop = newValue;
+                        });
+                      },
+                      items: cropEncoding.entries.map((entry) {
+                        return DropdownMenuItem<int>(
+                          value: entry.value,
+                          child: Text("${entry.key}"),
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(
+                        labelText: "Select Crop",
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) => value == null ? "Please select a crop" : null,
+                    ),
+                    SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                          textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: predictpH,
+                        child: Text("Predict"),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        predictionResult,
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: Text(
+                        suggestion,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
